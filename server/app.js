@@ -4,6 +4,7 @@ const utils = require("./lib/hashUtils");
 const partials = require("express-partials");
 const bodyParser = require("body-parser");
 const Auth = require("./middleware/auth");
+const CookieParser = require("./middleware/cookieParser")
 const models = require("./models");
 
 const app = express();
@@ -71,27 +72,49 @@ app.post("/links", (req, res, next) => {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+
+
+app.get("/signup", (req, res) => {
+  console.log("IN SIGNUP ROUTE");
+  res.render("signup");
+});
+
+app.use(CookieParser);
+app.get("/login", [CookieParser, , , , , ,], (req, res) => {
+  console.log("IN LOGIN ROUTE");
+  res.render("login");
+});
+
 app.post("/signup", (req, res, next) => {
-  models.Users.create(req.body)
+  models.Users.getSignInData(req.body.username)
+    .then(() => models.Users.create(req.body))
     .then(() => {
-      console.log("SUCCESS POST SIGNUP", req.body);
-      res.sendStatus(201);
+      console.log("SUCCESS POST SIGNUP");
+      res.redirect('/');
     })
-    .catch(err => res.sendStatus(409));
+    .catch(err => res.redirect("/signup"));
 });
 
 app.post("/login", (req, res, next) => {
+  console.log("SUCCESSFULLY RECEIVED LOGIN POST REQUEST");
   models.Users.getSignInData(req.body.username)
     //.then((data) => console.log(data))
-    .then((data) => models.Users.compare(req.body.password, data.password, data.salt))
-    .then((isCorrect) => {
+    .then(data => {
+      return models.Users.compare(req.body.password, data.password, data.salt);
+    })
+    .then(isCorrect => {
+      console.log(isCorrect);
       if (isCorrect) {
-        console.log('LOGIN SUCCESSFUL');
-        res.sendStatus(201);
+        console.log("LOGIN SUCCESSFUL", isCorrect);
+        res.redirect("/");
+      } else {
+        console.log("REDIRECTING TO SIGNUP", isCorrect);
+        res.redirect("/login");
       }
     })
-    .catch(err => console.log(err));
+    .catch(err => res.redirect("/login"));
 });
+
 /************************************************************/
 // Handle the code parameter route last - if all other routes fail
 // assume the route is a short code and try and handle it here.
