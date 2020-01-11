@@ -44,6 +44,10 @@ class Users extends Model {
 
     return super.create.call(this, newUser);
   }
+
+  getSignInData(username) {
+    return super.get({username: username});
+  }
 }
 
 module.exports = new Users();
