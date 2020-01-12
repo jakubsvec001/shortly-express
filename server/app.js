@@ -4,7 +4,7 @@ const utils = require("./lib/hashUtils");
 const partials = require("express-partials");
 const bodyParser = require("body-parser");
 const Auth = require("./middleware/auth");
-const CookieParser = require("./middleware/cookieParser")
+const CookieParser = require("./middleware/cookieParser");
 const models = require("./models");
 
 const app = express();
@@ -15,6 +15,8 @@ app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "../public")));
+app.use(CookieParser);
+app.use(Auth.createSession);
 
 app.get("/", (req, res) => {
   res.render("index");
@@ -73,14 +75,12 @@ app.post("/links", (req, res, next) => {
 // Write your authentication routes here
 /************************************************************/
 
-
 app.get("/signup", (req, res) => {
   console.log("IN SIGNUP ROUTE");
   res.render("signup");
 });
 
-app.use(CookieParser);
-app.get("/login", [CookieParser, , , , , ,], (req, res) => {
+app.get("/login", (req, res) => {
   console.log("IN LOGIN ROUTE");
   res.render("login");
 });
@@ -90,7 +90,7 @@ app.post("/signup", (req, res, next) => {
     .then(() => models.Users.create(req.body))
     .then(() => {
       console.log("SUCCESS POST SIGNUP");
-      res.redirect('/');
+      res.redirect("/");
     })
     .catch(err => res.redirect("/signup"));
 });
@@ -98,12 +98,10 @@ app.post("/signup", (req, res, next) => {
 app.post("/login", (req, res, next) => {
   console.log("SUCCESSFULLY RECEIVED LOGIN POST REQUEST");
   models.Users.getSignInData(req.body.username)
-    //.then((data) => console.log(data))
     .then(data => {
       return models.Users.compare(req.body.password, data.password, data.salt);
     })
     .then(isCorrect => {
-      console.log(isCorrect);
       if (isCorrect) {
         console.log("LOGIN SUCCESSFUL", isCorrect);
         res.redirect("/");
